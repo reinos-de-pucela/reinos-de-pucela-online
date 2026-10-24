@@ -1,0 +1,16 @@
+{
+  "name": "reinos-de-pucela-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Servidor WebSocket de sesión para Reinos de Pucela (hasta 10 jugadores)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
