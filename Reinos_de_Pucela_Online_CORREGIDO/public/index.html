@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reinos de Pucela — Mundo abierto</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9dc9e8;font-family:system-ui,Arial,sans-serif;color:#213448}canvas{display:block;position:fixed;inset:0;z-index:0;outline:none}.panel{z-index:2}
+.panel{position:absolute;background:#fff5dfed;border:2px solid #263b4e;border-radius:13px;padding:10px;box-shadow:0 4px 0 #20324735}
+#brand{top:10px;left:10px;width:250px}h1{font-size:19px;margin:0;color:#83412b}small{font-size:11px}#stats{top:10px;left:270px;display:flex;gap:8px;align-items:center}.stat{min-width:82px;font-weight:800;font-size:12px}.bar{height:8px;background:#d9d2c4;border:1px solid #283c4b;border-radius:8px;overflow:hidden;margin-top:3px}.fill{height:100%;width:100%;background:#dc4b48}#staminaFill{background:#48b86a}
+#multi{right:10px;top:10px;width:230px}button,input{font:inherit;border:2px solid #263b4e;border-radius:8px;padding:7px}button{background:#e9bd57;font-weight:800;cursor:pointer}input{width:100%;margin:4px 0;background:white}.row{display:flex;gap:4px}.row button{flex:1}.tiny{font-size:10px;line-height:1.3;margin-top:5px}#controls{bottom:10px;left:10px;max-width:310px;font-size:11px;line-height:1.5}#quest{bottom:10px;right:10px;width:245px;font-size:12px;line-height:1.4}#quest b{color:#874a2b}#mapHud{position:absolute;z-index:3;right:12px;top:188px;width:190px;padding:7px;background:#fff5dfed;border:2px solid #263b4e;border-radius:12px;box-shadow:0 4px 0 #20324735}#miniMapCanvas{position:static!important;inset:auto!important;width:100%;height:150px;display:block;border:1px solid #52634b;border-radius:7px;background:#d5dcb7}#mapHud .tiny{margin:4px 0 0}#worldMap{display:none;position:fixed;z-index:20;inset:0;background:#142333dd;align-items:center;justify-content:center;padding:16px}#worldMap.open{display:flex}#worldMapCard{width:min(1100px,96vw);max-height:96vh;overflow:auto;background:#fff5df;border:3px solid #263b4e;border-radius:16px;padding:14px;box-shadow:0 8px 0 #101b28aa}#worldMapCanvas{width:100%;height:auto;max-height:72vh;aspect-ratio:1.25;display:block;background:#d5dcb7;border:2px solid #263b4e;border-radius:8px}#worldMapHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}#toast{position:absolute;bottom:165px;left:50%;transform:translateX(-50%);padding:9px 13px;background:#213448;color:white;border-radius:10px;display:none;text-align:center;max-width:90vw;font-size:13px}#center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:white;text-shadow:0 1px 3px #152535;font-size:20px;pointer-events:none}#start{position:absolute;z-index:10;inset:0;background:#192c3caa;display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}.modal{max-width:460px;background:#fff5df;border:3px solid #263b4e;border-radius:18px;padding:22px;box-shadow:0 8px 0 #15253566}.modal h2{margin:0 0 8px;color:#85462c}.modal p{line-height:1.5}.modal button{font-size:16px;padding:10px 16px}.badge{display:inline-block;background:#e4d1a3;border-radius:7px;padding:3px 7px;margin:3px 3px 3px 0;font-size:11px;font-weight:800}
+@media(max-width:760px){#brand{width:190px}h1{font-size:16px}#stats{top:85px;left:10px}#multi{width:195px}#controls{max-width:190px}#quest{width:190px;bottom:130px}.tiny{font-size:9px}}
+</style>
+</head>
+<body>
+<div id="brand" class="panel"><h1>🏰 REINOS DE PUCELA</h1><b>Mundo abierto · Online beta</b><br><small>Explora, combate y descubre secretos.</small></div>
+<div id="stats" class="panel"><div class="stat">❤️ Vida <div class="bar"><div id="healthFill" class="fill"></div></div><span id="healthText">100/100</span></div><div class="stat">⚡ Energía <div class="bar"><div id="staminaFill" class="fill"></div></div><span id="staminaText">100</span></div><div class="stat">⭐ <span id="xp">0</span> XP</div></div>
+<div id="multi" class="panel"><b>🧑‍🤝‍🧑 Online (hasta 10)</b><div class="row"><button id="hostBtn">Crear sala</button><button id="joinBtn">Unirme</button></div><input id="roomCode" placeholder="Código de sala"><div class="row"><button id="copyBtn">Copiar código</button></div><div class="tiny" id="netStatus">Conecta al servidor online para crear una sala o unirte con código.</div></div>
+<div id="controls" class="panel"><b>Controles</b><br>WASD: moverte · Ratón: girar cámara (clic para activar) · M: mapa completo<br>Espacio: saltar · Clic izquierdo / F: espada<br>Shift: correr · E: domesticar/montar caballo<br><small>Consejo: los monstruos rojos atacan si te acercas. ¡Esquiva y golpea!</small></div>
+<div id="quest" class="panel"><b>📜 Diario del aventurero</b><div id="questText">Explora el reino y derrota a tu primer monstruo.</div><hr><div>⚔ Derrotados: <b id="kills">0</b> · 🪙 Monedas: <b id="coins">0</b></div><div class="tiny">Lugares: Villa del Roble · Bosque Susurrante · Cueva de las Sombras · Mazmorra Antigua</div></div>
+<div id="mapHud" class="panel"><b>🗺️ Asentamientos del reino</b><canvas id="miniMapCanvas" width="240" height="190"></canvas><div class="tiny">Pulsa <b>M</b> para abrir el mapa completo</div></div><div id="worldMap"><div id="worldMapCard"><div id="worldMapHeader"><b>🗺️ Mapa completo de Pucela</b><button id="closeMap">Cerrar (M / Esc)</button></div><canvas id="worldMapCanvas" width="800" height="620"></canvas><div class="tiny">🏘️ Solo aparecen las ciudades, aldeas y sus nombres, además de tu posición en azul.</div></div></div><div id="toast"></div><div id="center">+</div>
+<div id="start"><div class="modal"><h2>Bienvenido a Reinos de Pucela</h2><p>Una aventura medieval 3D de mundo abierto con un reino mucho más grande, bosques densos, caminos, aldeas y ciudades amuralladas. Explora el bosque, busca la entrada de la cueva y lucha con monstruos. Explora el reino y, al publicarlo con el servidor, juega online con hasta nueve amigos.</p><div><span class="badge">🌲 Bosques densos</span><span class="badge">🛤️ Caminos</span><span class="badge">🏘️ Nuevas aldeas</span><span class="badge">🕳️ Cueva</span><span class="badge">💀 Mazmorra</span><span class="badge">⚔️ Combate</span></div><p><small>Para jugar, pulsa comenzar. El multijugador requiere que el servidor de Reinos de Pucela esté publicado online.</small></p><button id="begin">Comenzar aventura</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),status=$('netStatus');
+if(!window.THREE){
+  status.textContent='No se ha podido cargar el motor 3D. Puede que esta vista no permita cargar librerías externas. Prueba a abrir el archivo en Chrome o Edge con internet.';
+  $('begin').onclick=()=>{$('start').style.display='none';document.body.insertAdjacentHTML('beforeend','<div id="fallback" style="position:fixed;inset:0;z-index:0;background:linear-gradient(#8ec8ed 0 55%,#7ca34f 55%);display:grid;place-items:center;text-align:center;color:#fff;font-weight:900;text-shadow:0 2px 4px #223"><div style="font-size:clamp(20px,4vw,42px)">🏰 REINOS DE PUCELA<br><span style="font-size:18px">El motor 3D no se ha cargado</span><br><span style="font-size:14px">Abre el archivo en Chrome o Edge con conexión a internet.</span></div></div>');};
+  $('hostBtn').onclick=()=>{status.textContent='El multijugador necesita que carguen las librerías externas. Abre el archivo en Chrome o Edge con internet.'};
+  $('joinBtn').onclick=()=>{status.textContent='El multijugador necesita que carguen las librerías externas. Abre el archivo en Chrome o Edge con internet.'};
+  $('copyBtn').onclick=()=>{const code=$('roomCode').value.trim();status.textContent=code?'Código: '+code:'Primero crea una partida cuando el motor esté disponible.'};
+  return;
+}
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9dc9e8);scene.fog=new THREE.Fog(0x9dc9e8,150,900);
+const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,1800);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.domElement.style.zIndex='0';renderer.domElement.style.position='fixed';renderer.domElement.style.inset='0';renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe5f4ff,0x52623a,2));
+const sun=new THREE.DirectionalLight(0xffe4b4,2.1);sun.position.set(-30,45,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const M=(c,r=.9)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const mats={grass:M(0x72994c),path:M(0xb79a6a),stone:M(0x938d80),dark:M(0x565b60),wood:M(0x74452b),roof:M(0x923f2d),leaf:M(0x3f783f),leaf2:M(0x56884a),gold:M(0xe4b94d),water:M(0x438db0,.35)};
+function add(mesh,parent=scene){mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh}
+function box(w,h,d,material,x,y,z,parent=scene){let o=add(new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material),parent);o.position.set(x,y,z);return o}
+function cyl(rt,rb,h,material,x,y,z,seg=8,parent=scene){let o=add(new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),material),parent);o.position.set(x,y,z);return o}
+function sphere(rad,material,x,y,z,parent=scene){let o=add(new THREE.Mesh(new THREE.IcosahedronGeometry(rad,1),material),parent);o.position.set(x,y,z);return o}
+const ground=add(new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),mats.grass));ground.rotation.x=-Math.PI/2;ground.position.y=-.1;ground.receiveShadow=true;
+// Paths and clearing
+function plane(w,d,m,x,z){let p=add(new THREE.Mesh(new THREE.PlaneGeometry(w,d),m));p.rotation.x=-Math.PI/2;p.position.set(x,.005,z);return p}
+plane(8,100,mats.path,0,-24);plane(75,7,mats.path,0,-5);plane(9,48,mats.path,21,-28);
+// Castle village
+box(16,7,13,mats.stone,0,3.5,-49);box(18,1,15,mats.dark,0,7.2,-49);
+for(let [x,z] of [[-9,-57],[9,-57],[-9,-41],[9,-41]]){cyl(1.7,2,10,mats.stone,x,5,z);let cone=add(new THREE.Mesh(new THREE.ConeGeometry(2.3,3.6,8),mats.roof));cone.position.set(x,11.8,z)}
+box(5,4,.5,mats.wood,0,2,-41.8);box(2,2.7,.15,mats.dark,0,1.35,-41.5);
+function house(x,z,s=1,roofMaterial=mats.roof){box(6*s,3.8*s,5*s,M(0xd8c49b),x,1.9*s,z);let r=add(new THREE.Mesh(new THREE.ConeGeometry(4.7*s,3*s,4),roofMaterial));r.rotation.y=Math.PI/4;r.position.set(x,4.8*s,z);box(1*s,2*s,.16,mats.wood,x,1*s,z-2.55*s);for(let dx of [-1.7,1.7])box(.7*s,.8*s,.12,M(0x8dc7d6),x+dx*s,2.3*s,z-2.57*s)}
+house(-12,-8,1);house(12,-8,.95);house(-15,-19,.8);house(14,-22,.85);house(-8,4,.8);house(10,5,.85);
+function tree(x,z,s=1){cyl(.25*s,.4*s,2*s,mats.wood,x,s,z,7);sphere(1.35*s,mats.leaf,x,2*s,z);sphere(1.05*s,mats.leaf2,x+.5*s,2.8*s,z+.15*s);sphere(1*s,mats.leaf,x-.5*s,2.7*s,z-.2*s)}
+for(let i=0;i<1700;i++){let x=(Math.random()-.5)*1360,z=(Math.random()-.5)*1360;if(Math.abs(x)<28&&z>-38&&z<15)continue;if(Math.abs(x)<17&&z<-38)continue;if(Math.abs(x-21)<9&&z>-52&&z<-10)continue;tree(x,z,.7+Math.random()*.7)}
+
+// Cordillera de montañas: conos superpuestos con cumbres nevadas
+const mountainMat=M(0x716f70), mountainDark=M(0x555960), snowMat=M(0xe8edf0);
+function mountain(x,z,r,h){
+  const base=add(new THREE.Mesh(new THREE.ConeGeometry(r,h,7),mountainMat));
+  base.position.set(x,h/2-0.05,z);base.rotation.y=Math.random()*0.5;
+  const ridge=add(new THREE.Mesh(new THREE.ConeGeometry(r*.48,h*.52,7),mountainDark));
+  ridge.position.set(x-r*.17,h*.72,z-r*.12);ridge.rotation.y=base.rotation.y;
+  const snow=add(new THREE.Mesh(new THREE.ConeGeometry(r*.23,h*.24,7),snowMat));
+  snow.position.set(x-r*.17,h*.91,z-r*.12);snow.rotation.y=base.rotation.y;
+}
+for(let i=0;i<42;i++){
+  const side=i%2===0?-1:1;
+  const x=side*(300+Math.random()*145);
+  const z=-430+i*21+(Math.random()-.5)*28;
+  mountain(x,z,20+Math.random()*18,30+Math.random()*38);
+}
+// Colinas y elevaciones suaves repartidas por las zonas abiertas del reino.
+const rollingHills=[[-250,-80,48,9],[245,80,55,12],[-260,230,52,10],[265,-250,60,13],[60,265,48,8],[-80,-285,58,11],[360,170,45,9],[-360,170,48,10],[340,-70,50,8],[-330,-230,55,12]];
+// Mallas de elevación suaves integradas con el terreno: sin esferas superpuestas ni pegotes.
+function hillMesh(hx,hz,hr,hh){
+  const verts=[],indices=[];const rings=12,segs=40;
+  verts.push(hx,hh*.82,hz);
+  for(let ring=1;ring<=rings;ring++){
+    const q=ring/rings, y=hh*.82*(1-q*q*(3-2*q));
+    for(let j=0;j<segs;j++){const a=j/segs*Math.PI*2;verts.push(hx+Math.cos(a)*hr*q, y, hz+Math.sin(a)*hr*.82*q)}
+  }
+  for(let j=0;j<segs;j++)indices.push(0,1+j,1+(j+1)%segs);
+  for(let ring=0;ring<rings-1;ring++){const a0=1+ring*segs,b0=a0+segs;for(let j=0;j<segs;j++){const n=(j+1)%segs;indices.push(a0+j,b0+j,a0+n,a0+n,b0+j,b0+n)}}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeVertexNormals();
+  const hill=add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x789b50,roughness:.95,side:THREE.DoubleSide})));hill.position.y=0;hill.receiveShadow=true;
+}
+for(const [hx,hz,hr,hh] of rollingHills) hillMesh(hx,hz,hr,hh);
+function terrainHeight(x,z){let y=0;for(const [hx,hz,hr,hh] of rollingHills){const q=Math.hypot((x-hx)/hr,(z-hz)/(hr*.82));if(q<1){const t=1-q*q*(3-2*q);y=Math.max(y,hh*t*.82)}}return y}
+
+// Pueblos amurallados y una ciudad comercial al sur y al este
+let settlementColorIndex=0;
+const settlementRoofColors=[0x9a4932,0x527c9b,0x8a6548,0x9b783b,0x6d594d,0x8b4c55,0x667b45,0x78609b,0xb06d3c,0x4e7775,0x9a7848,0x704c35];
+function settlement(cx,cz,scale=1,wall=true){
+  // Cada asentamiento tiene un color de tejado propio para distinguirlo a distancia.
+  const city=wall && scale>=1.05, village=!wall && scale<=.8;
+  const roofMat=M(settlementRoofColors[settlementColorIndex++ % settlementRoofColors.length]);
+  if(wall){
+    const ws=city?40:34;
+    box(ws*scale,3*scale,1.2*scale,mats.stone,cx,1.5*scale,cz-17*scale);
+    box(ws*scale,3*scale,1.2*scale,mats.stone,cx,1.5*scale,cz+17*scale);
+    box(1.2*scale,3*scale,34*scale,mats.stone,cx-17*scale,1.5*scale,cz);
+    box(1.2*scale,3*scale,34*scale,mats.stone,cx+17*scale,1.5*scale,cz);
+    for(const [tx,tz] of [[-17,-17],[17,-17],[-17,17],[17,17]]){
+      cyl(city?1.9*scale:1.5*scale,1.8*scale,city?8*scale:6*scale,mats.stone,cx+tx*scale,city?4*scale:3*scale,cz+tz*scale,8);
+      const rr=add(new THREE.Mesh(new THREE.ConeGeometry(2*scale,2.7*scale,7),roofMat));
+      rr.position.set(cx+tx*scale,city?8.8*scale:6.8*scale,cz+tz*scale);
+    }
+    // Entrada principal y dos torres adicionales en las grandes ciudades.
+    box(5*scale,3.2*scale,1.5*scale,mats.dark,cx,1.6*scale,cz-17*scale);
+    if(city){for(const tx of [-8,8]){cyl(1.25*scale,1.35*scale,9*scale,mats.stone,cx+tx*scale,4.5*scale,cz-17*scale,9);const cap=add(new THREE.Mesh(new THREE.ConeGeometry(1.8*scale,2.8*scale,8),roofMat));cap.position.set(cx+tx*scale,10.2*scale,cz-17*scale)}}
+  }
+  const count=city?22:wall?15:village?6:9;
+  for(let i=0;i<count;i++){
+    const a=i*2.399, rad=(village?8:4+Math.sqrt(i)*(city?9:8))*scale;
+    const hs=(village?.38:.48)*scale+Math.random()*(village?.12:.2)*scale;
+    house(cx+Math.cos(a)*rad,cz+Math.sin(a)*rad,hs,roofMat);
+  }
+  // Plaza y edificio central diferentes para cada asentamiento.
+  if(city){
+    box(12*scale,.18*scale,10*scale,M(0xc8b99a),cx, .1*scale,cz);
+    box(7*scale,7*scale,7*scale,M(0xd7c6a2),cx,3.5*scale,cz);
+    const roof=add(new THREE.Mesh(new THREE.ConeGeometry(5.5*scale,5*scale,4),roofMat));roof.position.set(cx,9.5*scale,cz);
+    cyl(1.7*scale,2*scale,15*scale,mats.stone,cx+9*scale,7.5*scale,cz+7*scale,9);
+    const spire=add(new THREE.Mesh(new THREE.ConeGeometry(2.3*scale,4*scale,8),mats.gold));spire.position.set(cx+9*scale,17*scale,cz+7*scale);
+  }else{
+    box((village?3.5:5)*scale,4*scale,(village?3.5:5)*scale,M(0xd7c6a2),cx,2*scale,cz);
+    const roof=add(new THREE.Mesh(new THREE.ConeGeometry((village?3.2:4)*scale,3*scale,4),roofMat));roof.position.set(cx,5.5*scale,cz);
+    if(!wall){ // huertos y cercas dan una silueta rural propia a pueblos y aldeas
+      for(const side of [-1,1]){box(8*scale,.12*scale,.16*scale,mats.wood,cx+side*11*scale,.35*scale,cz+9*scale);box(.16*scale,.12*scale,7*scale,mats.wood,cx+side*15*scale,.35*scale,cz+12*scale)}
+      if(village){for(let k=0;k<3;k++)box(3*scale,.12*scale,1.1*scale,M(0x587c35),cx-10*scale+k*2*scale,.12*scale,cz+15*scale)}
+    }
+  }
+}
+settlement(-78,-92,1.0,true); // Villa del Duero
+settlement(83,75,1.15,true);  // Ciudad de mercado
+settlement(-125,105,.78,false); // Aldea de montaña
+settlement(120,-75,.8,false);  // Pueblo del este
+// Nuevas villas y aldeas para dar vida a las regiones lejanas
+settlement(-190,-170,.78,false); // Aldea del Robledal
+settlement(158,-135,.9,true);    // Ciudad de las Torres
+settlement(-165,105,.88,true);   // Villa de la Frontera
+settlement(190,180,.72,false);   // Aldea del Río
+settlement(18,155,.8,false);     // Pueblo del Camino
+settlement(-18,-178,.7,false);   // Aldea del Castillo
+// Grandes regiones nuevas: ciudades, villas y aldeas en el borde del mapa
+settlement(-320,-300,1.2,true); settlement(315,-320,1.25,true);
+settlement(-335,300,1.15,true); settlement(325,315,1.3,true);
+settlement(0,365,1.0,true); settlement(5,-390,1.05,true);
+settlement(-390,-30,.9,false); settlement(390,25,.95,false);
+settlement(-250,175,.82,false); settlement(245,-205,.85,false);
+settlement(225,235,.9,false); settlement(-230,-235,.8,false);
+settlement(440,-175,.82,false); // Aldea del Este, en la región oriental
+settlement(610,-160,1.65,true); // Ciudad grande del este
+// Nuevos pueblos del noroeste, separados entre sí y con identidad visual propia
+settlement(-535,-430,.82,false); // Aldea de los Pinares
+settlement(-565,-285,.95,false); // Pueblo de Piedra Azul
+settlement(-500,-120,.78,false); // Aldea del Viento
+settlement(-555,65,1.0,true); // Villa del Noroeste
+
+// Red de caminos secundarios entre asentamientos y la capital
+function roadBetween(x1,z1,x2,z2,width=5){const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz);const r=box(width,.035,len,mats.path,(x1+x2)/2,.018,(z1+z2)/2);r.rotation.y=Math.atan2(dx,dz);return r}
+roadBetween(0,-8,-78,-92,6);roadBetween(0,-8,83,75,6);roadBetween(0,-8,-92,75,5);
+roadBetween(0,-8,73,-55,5);roadBetween(-78,-92,-158,-145,5);roadBetween(83,75,155,145,5);
+roadBetween(83,75,158,-135,5);roadBetween(-92,75,-165,105,5);roadBetween(0,-8,18,155,5);
+roadBetween(0,-49,-18,-178,5);roadBetween(18,155,155,145,4);roadBetween(-165,105,-158,-145,4);
+roadBetween(0,-8,-320,-300,7);roadBetween(0,-8,315,-320,7);roadBetween(0,-8,-335,300,7);roadBetween(0,-8,325,315,7);roadBetween(0,-8,0,365,6);roadBetween(0,-8,5,-390,6);roadBetween(-320,-300,-390,-30,5);roadBetween(315,-320,390,25,5);roadBetween(-335,300,-250,175,5);roadBetween(325,315,225,235,5);roadBetween(0,365,225,235,5);roadBetween(5,-390,245,-205,5);roadBetween(315,-320,440,-175,5); roadBetween(440,-175,610,-160,8); roadBetween(325,315,610,-160,6); roadBetween(-320,-300,-535,-430,5); roadBetween(-535,-430,-565,-285,4); roadBetween(-565,-285,-500,-120,4); roadBetween(-500,-120,-555,65,5);
+// Ríos con nombres y puentes de madera en los cruces principales.
+function riverSegment(x1,z1,x2,z2,width=12){const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz);const r=add(new THREE.Mesh(new THREE.BoxGeometry(width,.055,len),mats.water));r.position.set((x1+x2)/2,.035,(z1+z2)/2);r.rotation.y=Math.atan2(dx,dz);r.receiveShadow=true;return r}
+function bridge(x,z,angle=0){const g=new THREE.Group();scene.add(g);for(let i=0;i<9;i++){const plank=box(7,.22,1.05,M(0x8a6039),x,0.5,z+(i-4)*.9,g);plank.rotation.y=angle;}for(const side of [-1,1]){for(let i=-1;i<=1;i++)cyl(.16,.19,1.1,M(0x634329),x+Math.cos(angle)*side*3.3,.45,z+Math.sin(angle)*side*3.3+i*2.3,6,g);}return g}
+function riverLabel(text,x,z){const c=document.createElement('canvas');c.width=512;c.height=96;const q=c.getContext('2d');q.fillStyle='rgba(21,63,91,.78)';q.roundRect(4,4,504,88,18);q.fill();q.font='bold 38px system-ui';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#ffffff';q.fillText(text,256,49);const tex=new THREE.CanvasTexture(c);const spr=add(new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false})));spr.position.set(x,7,z);spr.scale.set(34,6.4,1);}
+// Río Duero: atraviesa el reino de noroeste a sureste, con puentes para cruzarlo.
+riverSegment(-680,-470,-420,-300,12);riverSegment(-420,-300,-180,-120,12);riverSegment(-180,-120,80,65,12);riverSegment(80,65,330,250,12);riverSegment(330,250,650,465,12);
+bridge(-300,-220,.98);bridge(0,0,.95);bridge(240,185,.95);riverLabel('Río Duero',-65,-35);
+// Río Esgueva, ramal que recorre la región oriental y conecta con el Duero.
+riverSegment(650,-480,560,-300,9);riverSegment(560,-300,520,-100,9);riverSegment(520,-100,330,250,9);bridge(545,-205,.35);riverLabel('Río Esgueva',530,-345);
+
+// Huertos y pequeños grupos de árboles junto a los caminos
+for(const [cx,cz] of [[-62,-70],[52,48],[-132,80],[132,-105],[15,125]]){
+ for(let i=0;i<16;i++){const a=i*2.399,rr=8+Math.random()*12;tree(cx+Math.cos(a)*rr,cz+Math.sin(a)*rr,.65+Math.random()*.55)}
+}
+// Más caminos que unen los asentamientos con la capital
+plane(6,90,mats.path,-78,-25);
+plane(90,6,mats.path,0,75);
+
+// cave entrance at east forest edge
+const caveX=34,caveZ=-29;
+const caveStone=M(0x4e5153), caveDark=M(0x151b22);
+let archL=cyl(1.7,1.9,5,caveStone,caveX-2,2.5,caveZ,8);let archR=cyl(1.7,1.9,5,caveStone,caveX+2,2.5,caveZ,8);
+let archTop=add(new THREE.Mesh(new THREE.TorusGeometry(2,0.65,8,12,Math.PI),caveStone));archTop.position.set(caveX,4.6,caveZ);archTop.rotation.z=Math.PI;
+box(3.8,3.5,.2,caveDark,caveX,1.8,caveZ-.1);
+for(let i=0;i<7;i++){let z=caveZ-4-i*3;let x=caveX+(i%2?-.5:.6);cyl(1.3,1.5,2.3,caveStone,x,1.1,z,7)}
+// dungeon entrance and ruins in a separate reachable area
+const dungeonX=-35,dungeonZ=-35;
+box(12,5,1.4,mats.dark,dungeonX,2.5,dungeonZ);box(4,4,1.5,caveDark,dungeonX,2,dungeonZ-.8);
+for(let x of [dungeonX-5,dungeonX+5]){box(2,7,2,mats.stone,x,3.5,dungeonZ);let top=add(new THREE.Mesh(new THREE.ConeGeometry(1.6,2,4),mats.roof));top.position.set(x,8,dungeonZ)}
+for(let i=0;i<6;i++)box(1.2,1.2,1.2,mats.stone,dungeonX-5+i*2,6.6,dungeonZ);
+// lake
+const lake=add(new THREE.Mesh(new THREE.CircleGeometry(7,24),mats.water));lake.rotation.x=-Math.PI/2;lake.position.set(-29,.02,15);
+for(let i=0;i<15;i++){let a=i/15*Math.PI*2; sphere(.5,M(0x8d8b7b),-29+Math.cos(a)*7,.15,15+Math.sin(a)*7)}
+// Player avatar
+function makeAvatar(color=0x268c9d,enemy=false){let g=new THREE.Group();let body=add(new THREE.Mesh(new THREE.CapsuleGeometry(.42,.7,4,8),M(color)),g);body.position.y=1.05;let head=add(new THREE.Mesh(new THREE.SphereGeometry(.32,12,10),M(enemy?0x9f4c43:0xe6b98e)),g);head.position.y=1.9;let hair=add(new THREE.Mesh(new THREE.SphereGeometry(.34,10,8,0,Math.PI*2,0,Math.PI*.55),M(enemy?0x201b20:0x513624)),g);hair.position.y=2.03;for(let x of [-.18,.18]){let leg=add(new THREE.Mesh(new THREE.BoxGeometry(.17,.48,.2),M(0x3d4a5b)),g);leg.position.set(x,.28,0)}if(enemy){let horns=M(0x29252a);for(let x of [-.22,.22]){let h=add(new THREE.Mesh(new THREE.ConeGeometry(.13,.45,5),horns),g);h.position.set(x,2.28,0);h.rotation.z=x<0?.3:-.3}}return g}
+const player=makeAvatar();scene.add(player);player.position.set(0,0,2);
+// Caballos domesticables: acércate y pulsa E para montar o desmontar
+const horses=[];let mountedHorse=null;
+function makeHorse(x,z,color=0x80502e){const g=new THREE.Group();const coat=M(color),mane=M(0x30231b),hoof=M(0x292b2c);
+ const body=add(new THREE.Mesh(new THREE.SphereGeometry(1,12,10),coat),g);body.scale.set(.9,.52,.42);body.position.set(0,1.25,0);
+ const neck=add(new THREE.Mesh(new THREE.CylinderGeometry(.22,.34,.9,8),coat),g);neck.position.set(0,1.72,.48);neck.rotation.x=-.42;
+ const head=add(new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),coat),g);head.scale.set(.72,.8,1);head.position.set(0,2.08,.78);
+ const maneMesh=add(new THREE.Mesh(new THREE.ConeGeometry(.2,.65,6),mane),g);maneMesh.position.set(0,2.12,.43);maneMesh.rotation.x=-.35;
+ for(const lx of [-.55,.55])for(const lz of [-.23,.23]){const leg=add(new THREE.Mesh(new THREE.CylinderGeometry(.075,.095,.72,6),coat),g);leg.position.set(lx,.55,lz);const hoofMesh=add(new THREE.Mesh(new THREE.BoxGeometry(.18,.14,.19),hoof),g);hoofMesh.position.set(lx,.17,lz)}
+ g.position.set(x,0,z);scene.add(g);horses.push({g,x,z,tamed:false});return horses[horses.length-1]}
+makeHorse(12,18,0x80502e);makeHorse(-24,34,0x5d5147);makeHorse(58,-68,0x9a6337);makeHorse(-110,-120,0xeee0c6);makeHorse(175,160,0x70402a);
+function interactHorse(){if(mountedHorse){mountedHorse.x=player.position.x+Math.sin(yaw)*2;mountedHorse.z=player.position.z+Math.cos(yaw)*2;mountedHorse.g.position.set(mountedHorse.x,0,mountedHorse.z);mountedHorse.g.rotation.y=yaw;mountedHorse=null;player.position.y=0;notify('Te has bajado del caballo.');return}
+ let nearest=null,dist=6;for(const h of horses){const d=Math.hypot(h.g.position.x-player.position.x,h.g.position.z-player.position.z);if(d<dist){dist=d;nearest=h}}
+ if(nearest){nearest.tamed=true;mountedHorse=nearest;notify('¡Caballo domesticado! Vas mucho más rápido. Pulsa E para desmontar.')}else notify('Acércate a un caballo y pulsa E para domesticarlo.')}
+
+const sword=box(.12,.12,1.25,M(0xd8e4e8,.35),.55,1.2,.15,player);sword.rotation.x=-.15;const guard=box(.65,.13,.15,M(0xb78a42),.55,1.2,.15,player);guard.rotation.z=.12;
+const swordBase=new THREE.Vector3(.55,1.2,.15);
+let yaw=0,pitch=0.10,health=100,stamina=100,xp=0,kills=0,coins=0,attackCooldown=0,attackAnim=0,damageCooldown=0,jump=0,jumpV=0;
+const enemies=[];function spawnEnemy(x,z,type='goblin'){const g=makeAvatar(type==='skeleton'?0xb9b8ad:0x9d3834,true);scene.add(g);g.position.set(x,0,z);const e={g,x,z,hp:type==='skeleton'?65:45,max:type==='skeleton'?65:45,type,cd:Math.random(),alive:true,homeX:x,homeZ:z};enemies.push(e);return e}
+
+// Gran castillo de Pucela, con murallas, torreones, almenas y puerta monumental
+const castleZ=-112;
+box(30,15,24,mats.stone,0,7.5,castleZ);
+box(34,1,28,mats.dark,0,15.2,castleZ);
+for(const [tx,tz] of [[-18,castleZ-15],[18,castleZ-15],[-18,castleZ+15],[18,castleZ+15]]){
+  cyl(3.2,3.2,19,mats.stone,tx,9.5,tz,10);
+  const roof=add(new THREE.Mesh(new THREE.ConeGeometry(4.1,5.5,8),mats.roof));roof.position.set(tx,21.5,tz);
+  for(let k=0;k<8;k++){const a=k*Math.PI/4;box(.8,1.1,.8,mats.stone,tx+Math.cos(a)*2.8,19.1,tz+Math.sin(a)*2.8)}
+}
+box(8,10,1.4,mats.wood,0,5,castleZ+12.5);
+box(4,6,.25,mats.dark,0,3,castleZ+13.3);
+box(48,5,3,mats.stone,0,2.5,castleZ+27);
+box(48,5,3,mats.stone,0,2.5,castleZ-27);
+box(3,5,52,mats.stone,-24,2.5,castleZ);
+box(3,5,52,mats.stone,24,2.5,castleZ);
+for(let i=-20;i<=20;i+=5){box(1.4,1.5,1.4,mats.stone,i,5.8,castleZ+27);box(1.4,1.5,1.4,mats.stone,i,5.8,castleZ-27)}
+// Pequeños puestos, torres de vigilancia y casas nuevas por los caminos
+for(const [bx,bz,sc] of [[-34,-76,1.1],[34,-78,1.2],[-42,52,1.1],[43,58,1.25],[72,12,.9],[-76,-48,1.0],[82,88,1.2],[-88,92,1.1],[8,72,1.15],[-12,84,.95]]) house(bx,bz,sc);
+for(const [tx,tz] of [[-35,-94],[35,-94],[-58,25],[58,25],[90,-40],[-95,5]]){
+  cyl(1.6,2,7,mats.stone,tx,3.5,tz,8);
+  cyl(1.9,2,1,mats.dark,tx,7.3,tz,8);
+  const watchRoof=add(new THREE.Mesh(new THREE.ConeGeometry(2.5,3,8),mats.roof));watchRoof.position.set(tx,9.3,tz);
+}
+// Los monstruos aparecen dispersos por el campo y los bosques, nunca dentro de los núcleos habitados.
+const settlementZones=[[610,-160,48],[-78,-92,26],[83,75,29],[-92,75,22],[73,-55,22],[-158,-145,22],[158,-135,26],[-165,105,26],[155,145,21],[18,155,22],[-18,-178,20],[-320,-300,32],[315,-320,33],[-335,300,31],[325,315,34],[0,365,28],[5,-390,29],[-390,-30,24],[390,25,25],[-250,175,22],[245,-205,23],[225,235,24],[-230,-235,22],[0,-49,25],[-535,-430,23],[-565,-285,25],[-500,-120,22],[-555,65,28]];
+function nearSettlement(x,z,extra=0){return settlementZones.some(([sx,sz,r])=>Math.hypot(x-sx,z-sz)<r+extra)}
+for(let i=0;i<86;i++){
+  let ex=0,ez=0,tries=0;
+  do{ex=(Math.random()-.5)*900;ez=(Math.random()-.5)*900;tries++}while((nearSettlement(ex,ez,7)||(Math.abs(ex)<24&&ez>-42&&ez<18))&&tries<180);
+  if(nearSettlement(ex,ez,4)){ex=Math.max(-470,Math.min(470,ex+45));}
+  spawnEnemy(ex,ez,Math.random()<.42?'skeleton':'goblin');
+}
+
+// Personajes amistosos que pasean por las villas y ofrecen compañía visual
+const friendlyNPCs=[];
+function spawnFriendly(x,z,name,color,role){
+ const g=makeAvatar(color,false);scene.add(g);g.position.set(x,0,z);
+ friendlyNPCs.push({g,name,role,homeX:x,homeZ:z,phase:Math.random()*6.28});
+}
+spawnFriendly(-7,5,'Aldeana',0x3c9b69,'Vecina');
+spawnFriendly(7,-7,'Guardia',0x3566a8,'Guardia');
+spawnFriendly(-25,-43,'Mercader',0xb77b35,'Mercader');
+spawnFriendly(44,35,'Explorador',0x4c9b9a,'Explorador');
+spawnFriendly(80,-68,'Alcaldesa',0x8d62ad,'Alcaldesa');
+spawnFriendly(-82,75,'Pastor',0x689344,'Pastor');
+// Cada ciudad, villa y aldea recibe vecinos amistosos que deambulan cerca de sus casas.
+const townNPCSpots=[[-78,-92,'Villa del Duero'],[83,75,'Ciudad de mercado'],[-125,105,'Aldea de montaña'],[120,-75,'Pueblo del Este'],[-190,-170,'Aldea del Robledal'],[158,-135,'Ciudad de las Torres'],[-165,105,'Villa de la Frontera'],[190,180,'Aldea del Río'],[18,155,'Pueblo del Camino'],[-18,-178,'Aldea del Castillo'],[-320,-300,'Ciudad del Roble'],[315,-320,'Ciudad del Este'],[-335,300,'Villa de la Frontera'],[325,315,'Ciudad Real'],[0,365,'Villa del Norte'],[5,-390,'Ciudad del Sur'],[-390,-30,'Aldea Occidental'],[390,25,'Villa Oriental'],[-250,175,'Pueblo de la Colina'],[245,-205,'Villa del Lago'],[225,235,'Aldea del Río Alto'],[-230,-235,'Pueblo del Bosque'],[440,-175,'Aldea del Este'],[610,-160,'Ciudad grande del este'],[-535,-430,'Aldea de los Pinares'],[-565,-285,'Pueblo de Piedra Azul'],[-500,-120,'Aldea del Viento'],[-555,65,'Villa del Noroeste']];
+const npcColors=[0x3c9b69,0x3566a8,0xb77b35,0x4c9b9a,0x8d62ad,0x689344,0xc4a24b];
+for(const [cx,cz,town] of townNPCSpots){
+ const count=town.includes('Ciudad')?5:3;
+ for(let i=0;i<count;i++){
+  const a=(i/count)*Math.PI*2+Math.random()*.4, r=5+Math.random()*8;
+  const role=i===0?'Guardia':(i===1?'Mercader':'Vecino');
+  spawnFriendly(cx+Math.cos(a)*r,cz+Math.sin(a)*r,role+' de '+town,npcColors[Math.floor(Math.random()*npcColors.length)],role);
+ }
+}
+
+const remotes=new Map();
+let netSocket=null, netPlayerId=null, netRoomCode=null, netConnected=false, lastNetSend=0;
+function makeRemote(id){
+ let a=makeAvatar(0x6554c4);scene.add(a);remotes.set(id,a);return a;
+}
+function removeRemote(id){
+ if(remotes.has(id)){scene.remove(remotes.get(id));remotes.delete(id)}
+}
+function netSend(obj){
+ if(netSocket && netSocket.readyState===WebSocket.OPEN) netSocket.send(JSON.stringify(obj));
+}
+function netStatus(t){status.textContent=t}
+function connectOnline(action, code=''){
+ if(netSocket && netSocket.readyState===WebSocket.OPEN){
+   netSend({type:action, code:code.trim().toUpperCase()}); return;
+ }
+ if(netSocket){try{netSocket.close()}catch(e){}}
+ const proto=location.protocol==='https:'?'wss:':'ws:';
+ const url=proto+'//'+location.host+'/ws';
+ netStatus('Conectando con el servidor…');
+ try{netSocket=new WebSocket(url)}catch(e){netStatus('No se pudo abrir la conexión online.');return}
+ netSocket.addEventListener('open',()=>{
+   netConnected=true;
+   netSend({type:action,code:code.trim().toUpperCase()});
+ });
+ netSocket.addEventListener('message',ev=>{
+   let d;try{d=JSON.parse(ev.data)}catch(e){return}
+   if(d.type==='created'||d.type==='joined'){
+     netPlayerId=d.id;netRoomCode=d.code;$('roomCode').value=d.code;
+     netStatus('Sala '+d.code+' · '+(d.count||1)+'/10 jugadores. Comparte el código.');
+     notify(d.type==='created'?'¡Sala online creada!':'¡Te has unido a la sala!');
+     if(d.players) d.players.forEach(p=>{if(p.id!==netPlayerId){let a=remotes.get(p.id)||makeRemote(p.id);a.position.set(p.x,terrainHeight(p.x,p.z),p.z);a.rotation.y=p.yaw||0;}});
+   }else if(d.type==='player-joined'){
+     const p=d.player;if(!p||p.id===netPlayerId)return;
+     let a=remotes.get(p.id)||makeRemote(p.id);a.position.set(p.x||0,terrainHeight(p.x||0,p.z||0),p.z||0);
+     netStatus('Sala '+netRoomCode+' · '+d.count+'/10 jugadores.');
+     notify('¡Un aventurero se ha unido!');
+   }else if(d.type==='state'){
+     const p=d.player;if(!p||p.id===netPlayerId)return;
+     let a=remotes.get(p.id)||makeRemote(p.id);
+     a.position.set(p.x,terrainHeight(p.x,p.z),p.z);a.rotation.y=p.yaw||0;
+   }else if(d.type==='player-left'){
+     removeRemote(d.id);netStatus('Sala '+netRoomCode+' · '+d.count+'/10 jugadores.');
+   }else if(d.type==='error'){
+     netStatus(d.message||'Error de conexión online.');notify(d.message||'Error online');
+   }else if(d.type==='room-closed'){
+     netStatus('La sala se ha cerrado porque el anfitrión se ha desconectado.');
+     remotes.forEach((_,id)=>removeRemote(id));netRoomCode=null;
+   }else if(d.type==='full'){
+     netStatus('La sala está llena (máximo 10 jugadores).');netSocket.close();
+   }
+ });
+ netSocket.addEventListener('close',()=>{
+   netConnected=false;netPlayerId=null;netRoomCode=null;
+   remotes.forEach((_,id)=>removeRemote(id));
+   if(status.textContent.includes('Conectando'))netStatus('No se pudo conectar. Comprueba que el servidor esté publicado y vuelve a intentarlo.');
+ });
+ netSocket.addEventListener('error',()=>netStatus('No se pudo conectar al servidor. ¿Está publicado online?'));
+}
+function sendState(){
+ if(!netConnected||!netRoomCode)return;
+ const now=performance.now();if(now-lastNetSend<90)return;lastNetSend=now;
+ netSend({type:'state',x:player.position.x,z:player.position.z,yaw,health});
+}
+$('hostBtn').onclick=()=>connectOnline('create');
+$('joinBtn').onclick=()=>{
+ const code=$('roomCode').value.trim();
+ if(!code){notify('Escribe el código de sala de tu amigo.');return}
+ connectOnline('join',code);
+};
+$('copyBtn').onclick=async()=>{
+ const c=netRoomCode||$('roomCode').value.trim();
+ if(!c){notify('Crea una sala online primero.');return}
+ try{await navigator.clipboard.writeText(c);notify('Código copiado: '+c)}
+ catch(e){notify('Comparte este código: '+c)}
+};
+
+
+// Se evita concentrar enemigos alrededor del punto inicial: las regiones salvajes ya tienen sus propios grupos dispersos.
+const keys={};addEventListener('keydown',e=>{if(e.key.toLowerCase()==='m'){e.preventDefault();$('worldMap').classList.toggle('open');if($('worldMap').classList.contains('open')&&document.pointerLockElement)document.exitPointerLock();drawMaps();return}if(e.key==='Escape'&&$('worldMap').classList.contains('open')){$('worldMap').classList.remove('open');return}keys[e.key.toLowerCase()]=true;if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))e.preventDefault();if(e.key.toLowerCase()==='f')attack();if(e.key.toLowerCase()==='e'){e.preventDefault();interactHorse()}});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);$('closeMap').onclick=()=> $('worldMap').classList.remove('open');
+let locked=false;renderer.domElement.addEventListener('click',()=>{if(!$('start').style.display||$('start').style.display!=='none')return;if(document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.()});document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);document.addEventListener('mousemove',e=>{if(locked){yaw-=e.movementX*.0015;pitch-=e.movementY*.0010;pitch=THREE.MathUtils.clamp(pitch,-0.12,0.42)}});
+renderer.domElement.addEventListener('mousedown',e=>{if(e.button===0&&$('start').style.display==='none')attack()});
+function attack(){if(attackCooldown>0||health<=0)return;attackCooldown=.48;attackAnim=.28;stamina=Math.max(0,stamina-8);let hit=false;for(const n of friendlyNPCs){const t=clock.elapsedTime*.22+n.phase;n.g.position.x=n.homeX+Math.sin(t)*1.8;n.g.position.z=n.homeZ+Math.cos(t)*1.8;n.g.rotation.y=Math.atan2(Math.cos(t),-Math.sin(t));}for(const n of friendlyNPCs){const t=clock.elapsedTime*.22+n.phase;n.g.position.x=n.homeX+Math.sin(t)*1.8;n.g.position.z=n.homeZ+Math.cos(t)*1.8;n.g.rotation.y=Math.atan2(Math.cos(t),-Math.sin(t));}for(const e of enemies){if(!e.alive)continue;let dx=e.g.position.x-player.position.x,dz=e.g.position.z-player.position.z,dist=Math.hypot(dx,dz);let dirX=Math.sin(yaw),dirZ=Math.cos(yaw);let dot=(dx*dirX+dz*dirZ)/(dist||1);if(dist<3.3&&dot>.15){e.hp-=35;hit=true;e.g.position.x+=dirX*.55;e.g.position.z+=dirZ*.55;if(e.hp<=0){e.alive=false;scene.remove(e.g);kills++;xp+=e.type==='skeleton'?20:10;coins+=e.type==='skeleton'?5:2;notify('¡Monstruo derrotado! +XP y monedas');$('questText').textContent=kills===1?'¡Bien! Busca la Cueva de las Sombras al este.':kills>=3?'¡Eres un héroe! Explora la mazmorra al oeste.':'Sigue explorando y derrotando monstruos.'}}}if(!hit)notify('¡Tajo al aire! Acércate y mira hacia el monstruo.');updateStats()}
+$('begin').onclick=()=>{$('start').style.display='none';notify('¡Buena suerte! Haz clic en el mundo para mirar con el ratón.')};
+function drawOneMap(canvas,large=false){
+ const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#d5dcb7';ctx.fillRect(0,0,w,h);
+ // El minimapa se acerca a la posición del jugador; el mapa grande enseña todo el reino ampliado.
+ ctx.fillStyle='#8eaa72';ctx.fillRect(w*.025,h*.025,w*.95,h*.95);
+ // Montañas y caminos como elementos del terreno, sin iconos de personajes.
+ ctx.fillStyle='#8a8e91';
+ for(let i=0;i<18;i++){let x=w*(.06+(i%9)*.105),y=h*(.07+Math.floor(i/9)*.12);ctx.beginPath();ctx.moveTo(x,y+12);ctx.lineTo(x+10,y-10);ctx.lineTo(x+21,y+12);ctx.fill()}
+ ctx.strokeStyle='#c4a276';ctx.lineWidth=large?5:2;ctx.beginPath();ctx.moveTo(w*.5,h*.51);ctx.lineTo(w*.5,h*.23);ctx.lineTo(w*.34,h*.18);ctx.moveTo(w*.5,h*.51);ctx.lineTo(w*.76,h*.63);ctx.moveTo(w*.5,h*.51);ctx.lineTo(w*.25,h*.67);ctx.moveTo(w*.76,h*.63);ctx.lineTo(w*.94,h*.33);ctx.stroke();
+ const range=large?700:185, cx=large?0:player.position.x, cz=large?0:player.position.z;
+ const X=x=>w*(.025+.95*(x-cx+range)/(2*range)),Y=z=>h*(.025+.95*(z-cz+range)/(2*range));
+ const places=[
+  [0,-112,'Castillo de Pucela', '#70452f'],[610,-160,'Ciudad grande del este'],[-320,-300,'Ciudad del Roble'],[315,-320,'Ciudad del Este'],[-335,300,'Villa de la Frontera'],[325,315,'Ciudad Real'],[0,365,'Villa del Norte'],[5,-390,'Ciudad del Sur'],
+  [-78,-92,'Villa del Duero'],[83,75,'Ciudad de Mercado'],[-125,105,'Aldea de Montaña'],[120,-75,'Pueblo del Este'],[-190,-170,'Aldea del Robledal'],[158,-135,'Ciudad de las Torres'],[-165,105,'Villa de la Frontera'],[190,180,'Aldea del Río'],[18,155,'Pueblo del Camino'],[-18,-178,'Aldea del Castillo'],[-390,-30,'Aldea Occidental'],[390,25,'Villa Oriental'],[-250,175,'Pueblo de la Colina'],[245,-205,'Villa del Lago'],[225,235,'Aldea del Río Alto'],[-230,-235,'Pueblo del Bosque'],[440,-175,'Aldea del Este'],[0,-49,'Villa del Roble'],[-535,-430,'Aldea de los Pinares','#527c9b'],[-565,-285,'Pueblo de Piedra Azul','#527c9b'],[-500,-120,'Aldea del Viento','#9b783b'],[-555,65,'Villa del Noroeste','#6d594d']
+ ];
+ // Ríos azules con sus nombres y pequeños símbolos de puente.
+ const rivers=[{name:'Río Duero',pts:[[-680,-470],[-420,-300],[-180,-120],[80,65],[330,250],[650,465]]},{name:'Río Esgueva',pts:[[650,-480],[560,-300],[520,-100],[330,250]]}];
+ ctx.lineCap='round';for(const river of rivers){ctx.beginPath();river.pts.forEach(([x,z],i)=>{const px=X(x),py=Y(z);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});ctx.strokeStyle='#438db0';ctx.lineWidth=large?8:4;ctx.stroke();const mid=river.pts[Math.floor(river.pts.length/2)];const lx=X(mid[0]),ly=Y(mid[1]);if(large|| (Math.abs(mid[0]-player.position.x)<145&&Math.abs(mid[1]-player.position.z)<145)){ctx.font=`bold ${large?13:9}px system-ui`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.lineWidth=3;ctx.strokeStyle='#f5f0d9';ctx.strokeText(river.name,lx,ly-6);ctx.fillStyle='#174d70';ctx.fillText(river.name,lx,ly-6)}}
+ // Puentes representados como pequeñas barras claras sobre el río.
+ for(const [bx,bz] of [[-300,-220],[0,0],[240,185],[545,-205]]){const px=X(bx),py=Y(bz);ctx.save();ctx.translate(px,py);ctx.rotate(.6);ctx.fillStyle='#8b6038';ctx.fillRect(- (large?8:4),-(large?2:1),large?16:8,large?4:2);ctx.restore()}
+ // Solo aparecen asentamientos y sus nombres: ni jugadores, ni NPC, ni monstruos ni caballos.
+ for(const [x,z,name,color] of places){if(!large&&(Math.abs(x-player.position.x)>185||Math.abs(z-player.position.z)>185))continue;const px=X(x),py=Y(z),r=large?5:3.2;ctx.fillStyle=color||'#b57a39';ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff4d7';ctx.lineWidth=1;ctx.stroke();ctx.font=`${large?12:8}px system-ui`;ctx.textAlign=x>300?'right':'left';ctx.textBaseline='middle';const tx=x>300?px-r-3:px+r+3;ctx.lineWidth=3;ctx.strokeStyle='#f5f0d9';ctx.strokeText(name,tx,py-1);ctx.fillStyle='#24342b';ctx.fillText(name,tx,py-1)}
+ // Marcador azul de tu posición actual, tanto en el minimapa como en el mapa completo.
+ const ppx=X(player.position.x),ppy=Y(player.position.z);ctx.fillStyle='#1678ff';ctx.beginPath();ctx.arc(ppx,ppy,large?6:4.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ffffff';ctx.lineWidth=large?2.5:1.5;ctx.stroke();ctx.fillStyle='#123e8a';ctx.font=`bold ${large?12:9}px system-ui`;ctx.textAlign='left';ctx.textBaseline='bottom';ctx.lineWidth=3;ctx.strokeStyle='#f5f0d9';ctx.strokeText('Tú',ppx+7,ppy-3);ctx.fillText('Tú',ppx+7,ppy-3);
+ if(large){ctx.strokeStyle='#34483a';ctx.lineWidth=2;ctx.strokeRect(1,1,w-2,h-2)}
+}
+function drawMaps(){drawOneMap($('miniMapCanvas'),false);drawOneMap($('worldMapCanvas'),true)}
+const clock=new THREE.Clock();let sync=0,noticeTimer=0;
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);attackCooldown=Math.max(0,attackCooldown-dt);damageCooldown=Math.max(0,damageCooldown-dt);if(attackAnim>0){attackAnim-=dt;sword.rotation.z=Math.sin((attackAnim/.28)*Math.PI)*-1.7;sword.position.x=.55+Math.sin((attackAnim/.28)*Math.PI)*.45}else{sword.rotation.z=0;sword.position.x=.55}
+let move=0,strafe=0,turn=0;if(keys.w||keys.arrowup)move+=1;if(keys.s||keys.arrowdown)move-=1;if(keys.a)strafe-=1;if(keys.d)strafe+=1;if(keys.arrowleft)turn=1;if(keys.arrowright)turn=-1;if(!locked){if(keys.q)turn=1;if(keys.e)turn=-1}yaw+=turn*dt*1.8;
+let running=keys.shift&&stamina>1;let speed=mountedHorse?18:(running?10:(move||strafe?6.5:5));if(running&&(move||strafe))stamina=Math.max(0,stamina-19*dt);else stamina=Math.min(100,stamina+10*dt);
+player.position.x+=(Math.sin(yaw)*move+Math.cos(yaw)*strafe)*speed*dt;player.position.z+=(Math.cos(yaw)*move-Math.sin(yaw)*strafe)*speed*dt;player.position.x=THREE.MathUtils.clamp(player.position.x,-680,680);player.position.z=THREE.MathUtils.clamp(player.position.z,-680,680);player.rotation.y=yaw;
+if(keys[' ']&&jump===0)jumpV=6;jump+=jumpV*dt;jumpV-=17*dt;if(jump<0){jump=0;jumpV=0}player.position.y=terrainHeight(player.position.x,player.position.z)+(mountedHorse?1.05:0)+jump;
+if(mountedHorse){mountedHorse.g.position.set(player.position.x,terrainHeight(player.position.x,player.position.z),player.position.z);mountedHorse.g.rotation.y=yaw;}
+for(const n of friendlyNPCs){const t=clock.elapsedTime*.22+n.phase;n.g.position.x=n.homeX+Math.sin(t)*1.8;n.g.position.z=n.homeZ+Math.cos(t)*1.8;n.g.rotation.y=Math.atan2(Math.cos(t),-Math.sin(t));}for(const n of friendlyNPCs){const t=clock.elapsedTime*.22+n.phase;n.g.position.x=n.homeX+Math.sin(t)*1.8;n.g.position.z=n.homeZ+Math.cos(t)*1.8;n.g.rotation.y=Math.atan2(Math.cos(t),-Math.sin(t));}for(const e of enemies){if(!e.alive)continue;let dx=player.position.x-e.g.position.x,dz=player.position.z-e.g.position.z,dist=Math.hypot(dx,dz);e.cd-=dt;if(dist<11&&dist>1.4){e.g.position.x+=dx/dist*dt*(e.type==='skeleton'?1.7:1.35);e.g.position.z+=dz/dist*dt*(e.type==='skeleton'?1.7:1.35);e.g.rotation.y=Math.atan2(dx,dz)}else if(dist>=11){let t=clock.elapsedTime*.4+e.homeX;e.g.position.x=e.homeX+Math.sin(t)*.7;e.g.position.z=e.homeZ+Math.cos(t)*.7}if(dist<1.65&&e.cd<=0&&damageCooldown<=0){health=Math.max(0,health-(e.type==='skeleton'?13:8));damageCooldown=.75;e.cd=1.2;notify('¡Te han golpeado! Retrocede y ataca.');if(health<=0){health=100;player.position.set(0,0,2);coins=Math.max(0,coins-2);notify('Has caído y reapareces en la villa. Pierdes 2 monedas.')}updateStats()}}
+let target=new THREE.Vector3(player.position.x-Math.sin(yaw)*8,player.position.y+4.2+pitch*4,player.position.z-Math.cos(yaw)*8);camera.position.lerp(target,.22);
+const lookTarget=new THREE.Vector3(player.position.x+Math.sin(yaw)*2,player.position.y+1.35+pitch*3,player.position.z+Math.cos(yaw)*2);
+camera.up.set(0,1,0);camera.lookAt(lookTarget);
+sync+=dt;if(sync>.15){sendState();sync=0}
+if(noticeTimer<=0){let dC=Math.hypot(player.position.x-caveX,player.position.z-caveZ),dD=Math.hypot(player.position.x-dungeonX,player.position.z-dungeonZ);if(dC<7){$('questText').textContent='Estás ante la Cueva de las Sombras. ¡Cuidado con los esqueletos!'}else if(dD<9){$('questText').textContent='La Mazmorra Antigua está llena de enemigos.'}noticeTimer=1}else noticeTimer-=dt;
+drawMaps();drawMaps();renderer.render(scene,camera)}
+updateStats();animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+})();
+</script>
+</body></html>
